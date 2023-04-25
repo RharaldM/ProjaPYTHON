@@ -1,0 +1,187 @@
+js = "Olá João Serasa, criamos esse sistema que te ajudará a controlar suas finanças"
+print(js)
+
+def informar_rendimento():
+    mes = input("Digite o mês (ex: janeiro de 2023): ")
+    rendimento = input("Digite o rendimento líquido mensal: ")
+    with open("rendliquido.txt", "a") as arquivo:
+        arquivo.write(f"{mes}: {rendimento}\n")
+
+def alterar_rendimento():
+    mes = input("Digite o mês que deseja alterar: ")
+    with open("rendliquido.txt", "r+") as arquivo:
+        linhas = arquivo.readlines()
+        arquivo.seek(0)
+        for linha in linhas:
+            if mes in linha:
+                rendimento_atual = linha.split(": ")[1].rstrip("\n")
+                print(f"O rendimento líquido atual de {mes} é de {rendimento_atual}")
+                novo_rendimento = input("Digite o novo rendimento líquido: ")
+                linha = f"{mes}: {novo_rendimento}\n"
+            arquivo.write(linha)
+        arquivo.truncate()
+
+def excluir_rendimento():
+    mes = input("Digite o mês que deseja excluir: ")
+    with open("rendliquido.txt", "r") as arquivo:
+        linhas = arquivo.readlines()
+    with open("rendliquido.txt", "w") as arquivo:
+        for linha in linhas:
+            if mes not in linha:
+                arquivo.write(linha)
+        print(f"Rendimento líquido de {mes} excluído com sucesso.")
+
+def listar_rendimentos():
+    rendimentos = []
+    with open("rendliquido.txt", "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            mes, rendimento = line.split(": ")
+            rendimentos.append((mes, float(rendimento)))
+
+    rendimentos_ordenados = sorted(rendimentos, key=lambda x: x[0])
+
+    print("Rendimentos:")
+    for rendimento in rendimentos_ordenados:
+        print(f"Mês: {rendimento[0]} - Rendimento: {rendimento[1]}")
+
+    input("Pressione Enter para voltar ao menu principal.")
+
+def informar_despesa():
+    mes = input("Digite o mês (ex: janeiro de 2023): ")
+    despesa = input("Digite o valor da despesa: ")
+    with open("despesas.txt", "a") as arquivo:
+        arquivo.write(f"{mes}: {despesa}\n")
+
+def verificar_saldo():
+    saldo_por_mes = {}
+    with open("rendliquido.txt", "r") as arquivo_rendimentos, open("despesas.txt", "r") as arquivo_despesas:
+        rendimentos = arquivo_rendimentos.readlines()
+        despesas = arquivo_despesas.readlines()
+        for rendimento, despesa in zip(rendimentos, despesas):
+            mes_rend, valor_rend = rendimento.strip().split(": ")
+            mes_desp, valor_desp = despesa.strip().split(": ")
+            saldo = float(valor_rend) - float(valor_desp)
+            saldo_por_mes[mes_rend] = saldo
+            if saldo < 0:
+                print(f"Saldo negativo no mês {mes_rend}!")
+    return saldo_por_mes
+
+def alterar_despesa():
+    data = input("Digite a data da despesa que deseja alterar (ex: 01/01/2023): ")
+    with open("despesas.txt", "r+") as arquivo:
+        linhas = arquivo.readlines()
+        arquivo.seek(0)
+        for i, linha in enumerate(linhas):
+            if data in linha:
+                valor_atual = linha.split(": ")[1].rstrip("\n")
+                print(f"O valor atual da despesa de {data} é {valor_atual}")
+                novo_valor = input("Digite o novo valor: ")
+                linhas[i] = f"{data}: {novo_valor}\n"
+            arquivo.write(linha)
+        arquivo.truncate()
+    print(f"Despesa de {data} atualizada com sucesso.")
+
+def excluir_despesa():
+    data = input("Digite a data da despesa que deseja excluir (ex: 01/04/2023): ")
+    with open("despesas.txt", "r") as arquivo:
+        linhas = arquivo.readlines()
+    with open("despesas.txt", "w") as arquivo:
+        despesa_encontrada = False
+        for linha in linhas:
+            if data in linha:
+                despesa_encontrada = True
+            else:
+                arquivo.write(linha)
+        if despesa_encontrada:
+            print(f"Despesa do dia {data} excluída com sucesso.")
+        else:
+            print(f"Não foi encontrada nenhuma despesa do dia {data}.")
+
+def listar_despesas():
+    despesas = []
+    with open("despesas.txt", "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            data, valor = line.split(";")
+            despesas.append((data, float(valor)))
+
+    despesas_ordenadas = sorted(despesas, key=lambda x: x[0])
+
+    print("Despesas:")
+    for despesa in despesas_ordenadas:
+        print(f"Data: {despesa[0]} - Valor: {despesa[1]}")
+
+    total_despesas = sum([despesa[1] for despesa in despesas])
+    print(f"\nTotal de despesas: {total_despesas:.2f}") 
+
+def mostrar_resultado():
+    rendimentos = []
+    with open("rendliquido.txt", "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            mes, rendimento, investimento, rendimento_fundo = line.split(";")
+            rendimentos.append((mes, float(rendimento), float(investimento), float(rendimento_fundo)))
+
+    rendimentos_ordenados = sorted(rendimentos, key=lambda x: x[0])
+
+    print("Resultado:")
+    for rendimento in rendimentos_ordenados:
+        mes = rendimento[0]
+        rendimento_mensal = rendimento[1]
+        investimento = rendimento[2]
+        rendimento_fundo = rendimento[3]
+        total_despesas = obter_total_despesas(mes)
+        saldo_mensal = rendimento_mensal - total_despesas
+        if saldo_mensal < 0:
+            print(f"Mês: {mes} - Saldo mensal: {saldo_mensal:.2f} (SEM SALDO)")
+        else:
+            print(f"Mês: {mes} - Saldo mensal: {saldo_mensal:.2f}")
+        print(f"Receita: {rendimento_mensal:.2f}")
+        print(f"Despesas: {total_despesas:.2f}")
+        print(f"Valor investido no fundo de renda fixa: {investimento:.2f}")
+        print(f"Rendimento do fundo de renda fixa: {rendimento_fundo:.2f}")
+        poupanca_mensal = rendimento_mensal * 0.1
+        if saldo_mensal >= poupanca_mensal:
+            print(f"Bateu a meta de poupança do mês: {poupanca_mensal:.2f}")
+        else:
+            print(f"Não bateu a meta de poupança do mês: {poupanca_mensal:.2f}")
+        print()
+
+    input("Pressione Enter para voltar ao menu principal.")
+
+def menu():
+    while True:
+        print("Menu de opções")
+        print("Digite [1] se quiser - Informar rendimento")
+        print("Digite [2] se quiser - Alterar rendimento de um mês específico")
+        print("Digite [3] se quiser - Ecluir")
+        print("Digite [4] se quiser - Listar rendimentos")
+        print("Digite [5] se quiser - Informar as despesas")
+        print("Digite [6] se quiser - Alterar as despesas")
+        print("Digite [7] se quiser - Excluir alguma depesa")
+        print("Digite [8] se quiser - Listar as despesas")
+        print("Digite [0] se quiser - Sair")
+        opcao = input("\nDigite a opção desejada: ")
+        if opcao == "1":
+            informar_rendimento()
+        elif opcao == "2":
+            alterar_rendimento()
+        elif opcao == "3":
+            excluir_rendimento()
+        elif opcao == "4":
+            listar_rendimentos()
+        elif opcao == "5":
+            informar_despesa()
+        elif opcao == "6":
+            alterar_despesa()
+        elif opcao == "7":
+            excluir_despesa()
+        elif opcao == "8":
+            listar_despesas()
+        elif opcao == "0":
+            print("Encerrando a operação !!!")
+            break
+        else:
+            print("Opção inválida. Tente novamente.")
+menu()
